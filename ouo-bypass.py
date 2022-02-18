@@ -4,8 +4,12 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 
 # ouo url
-# eg: https://ouo.io/HxFVfD
-url = ""
+# Examples:
+# https://ouo.io/HxFVfD - ouo.io links (no account -> only one step)
+# https://ouo.press/Zu7Vs5 - ouo.io links (with account -> two steps)
+# Can exchange between ouo.press and ouo.io
+
+url = "https://ouo.press/Zu7Vs5"
 
 # -------------------------------------------
 # RECAPTCHA v3 BYPASS
@@ -36,25 +40,32 @@ ANCHOR_URL = 'https://www.google.com/recaptcha/api2/anchor?ar=1&k=6Lcr1ncUAAAAAH
 
 def ouo_bypass(url):
     client = requests.Session()
-    p = urlparse(url)
-    id = url.split('/')[-1]
+    tempurl = url.replace("ouo.press", "ouo.io")
+    p = urlparse(tempurl)
+    id = tempurl.split('/')[-1]
     
-    res = client.get(url)
-    
-    bs4 = BeautifulSoup(res.content, 'lxml')
-    inputs = bs4.find_all('input')
-    data = { input.get('name'): input.get('value') for input in inputs }
-    
-    ans = RecaptchaV3(ANCHOR_URL)
-    data['x-token'] = ans
-    
-    h = {
-        'content-type': 'application/x-www-form-urlencoded'
-    }
-    
-    url = f"{p.scheme}://{p.hostname}/go/{id}"
-    res = client.post(url, data=data, headers=h, allow_redirects=False)
-    
+    res = client.get(tempurl)
+    next_url = f"{p.scheme}://{p.hostname}/go/{id}"
+
+    for _ in range(2):
+
+        if res.headers.get('Location'):
+            break
+
+        bs4 = BeautifulSoup(res.content, 'lxml')
+        inputs = bs4.form.findAll("input", {"name": re.compile(r"token$")})
+        data = { input.get('name'): input.get('value') for input in inputs }
+        
+        ans = RecaptchaV3(ANCHOR_URL)
+        data['x-token'] = ans
+        
+        h = {
+            'content-type': 'application/x-www-form-urlencoded'
+        }
+        
+        res = client.post(next_url, data=data, headers=h, allow_redirects=False)
+        next_url = f"{p.scheme}://{p.hostname}/xreallcygo/{id}"
+
     return {
         'original_link': url,
         'bypassed_link': res.headers.get('Location')
