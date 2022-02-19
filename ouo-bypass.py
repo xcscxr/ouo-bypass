@@ -39,32 +39,35 @@ ANCHOR_URL = 'https://www.google.com/recaptcha/api2/anchor?ar=1&k=6Lcr1ncUAAAAAH
 # OUO BYPASS
 
 def ouo_bypass(url):
-    client = requests.Session()
-    tempurl = url.replace("ouo.press", "ouo.io")
-    p = urlparse(tempurl)
-    id = tempurl.split('/')[-1]
-    
-    res = client.get(tempurl)
-    next_url = f"{p.scheme}://{p.hostname}/go/{id}"
-
-    for _ in range(2):
-
-        if res.headers.get('Location'):
-            break
-
-        bs4 = BeautifulSoup(res.content, 'lxml')
-        inputs = bs4.form.findAll("input", {"name": re.compile(r"token$")})
-        data = { input.get('name'): input.get('value') for input in inputs }
+    try:
+        client = requests.Session()
+        tempurl = url.replace("ouo.press", "ouo.io")
+        p = urlparse(tempurl)
+        id = tempurl.split('/')[-1]
         
-        ans = RecaptchaV3(ANCHOR_URL)
-        data['x-token'] = ans
+        res = client.get(tempurl)
+        next_url = f"{p.scheme}://{p.hostname}/go/{id}"
         
-        h = {
-            'content-type': 'application/x-www-form-urlencoded'
-        }
+        for _ in range(2):
+            
+            if res.headers.get('Location'):
+                break
+
+            bs4 = BeautifulSoup(res.content, 'lxml')
+            inputs = bs4.form.findAll("input", {"name": re.compile(r"token$")})
+            data = { input.get('name'): input.get('value') for input in inputs }
         
-        res = client.post(next_url, data=data, headers=h, allow_redirects=False)
-        next_url = f"{p.scheme}://{p.hostname}/xreallcygo/{id}"
+            ans = RecaptchaV3(ANCHOR_URL)
+            data['x-token'] = ans
+        
+            h = {
+                'content-type': 'application/x-www-form-urlencoded'
+            }
+            
+            res = client.post(next_url, data=data, headers=h, allow_redirects=False)
+            next_url = f"{p.scheme}://{p.hostname}/xreallcygo/{id}"
+    except:
+        return ouo_bypass(url.replace("ouo.io", "ouo.press"))
 
     return {
         'original_link': url,
