@@ -1,0 +1,4 @@
+beautifulsoup4==4.12.2
+curl_cffi==0.5.7
+pip==23.2.1
+Requests==2.31.0

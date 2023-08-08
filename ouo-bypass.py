@@ -1,5 +1,5 @@
 import re
-import requests
+from curl_cffi import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 
@@ -12,10 +12,10 @@ from urllib.parse import urlparse
 url = "https://ouo.press/Zu7Vs5"
 
 # -------------------------------------------
-# RECAPTCHA v3 BYPASS
-# code from https://github.com/xcscxr/Recaptcha-v3-bypass
 
-def RecaptchaV3(ANCHOR_URL):
+def RecaptchaV3():
+    import requests
+    ANCHOR_URL = 'https://www.google.com/recaptcha/api2/anchor?ar=1&k=6Lcr1ncUAAAAAH3cghg6cOTPGARa8adOf-y9zv2x&co=aHR0cHM6Ly9vdW8ucHJlc3M6NDQz&hl=en&v=pCoGBhjs9s8EhFOHJFe8cqis&size=invisible&cb=ahgyd1gkfkhe'
     url_base = 'https://www.google.com/recaptcha/'
     post_data = "v={}&reason=q&c={}&k={}&co={}"
     client = requests.Session()
@@ -33,49 +33,57 @@ def RecaptchaV3(ANCHOR_URL):
     answer = re.findall(r'"rresp","(.*?)"', res.text)[0]    
     return answer
 
-ANCHOR_URL = 'https://www.google.com/recaptcha/api2/anchor?ar=1&k=6Lcr1ncUAAAAAH3cghg6cOTPGARa8adOf-y9zv2x&co=aHR0cHM6Ly9vdW8uaW86NDQz&hl=en&v=1B_yv3CBEV10KtI2HJ6eEXhJ&size=invisible&cb=4xnsug1vufyr'
+# -------------------------------------------
+
+client = requests.Session()
+client.headers.update({
+    'authority': 'ouo.io',
+    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+    'accept-language': 'en-GB,en-US;q=0.9,en;q=0.8',
+    'cache-control': 'max-age=0',
+    'referer': 'http://www.google.com/ig/adde?moduleurl=',
+    'upgrade-insecure-requests': '1',
+})
 
 # -------------------------------------------
 # OUO BYPASS
 
+
 def ouo_bypass(url):
-    client = requests.Session()
     tempurl = url.replace("ouo.press", "ouo.io")
     p = urlparse(tempurl)
     id = tempurl.split('/')[-1]
-    
-    res = client.get(tempurl)
+    res = client.get(tempurl, impersonate="chrome110")
     next_url = f"{p.scheme}://{p.hostname}/go/{id}"
 
     for _ in range(2):
 
-        if res.headers.get('Location'):
-            break
+        if res.headers.get('Location'): break
 
         bs4 = BeautifulSoup(res.content, 'lxml')
         inputs = bs4.form.findAll("input", {"name": re.compile(r"token$")})
         data = { input.get('name'): input.get('value') for input in inputs }
-        
-        ans = RecaptchaV3(ANCHOR_URL)
-        data['x-token'] = ans
+        data['x-token'] = RecaptchaV3()
         
         h = {
             'content-type': 'application/x-www-form-urlencoded'
         }
         
-        res = client.post(next_url, data=data, headers=h, allow_redirects=False)
+        res = client.post(next_url, data=data, headers=h, 
+            allow_redirects=False, impersonate="chrome110")
         next_url = f"{p.scheme}://{p.hostname}/xreallcygo/{id}"
 
     return {
         'original_link': url,
         'bypassed_link': res.headers.get('Location')
     }
-    
+
 # -------------------------------------------
 
 out = ouo_bypass(url)
 print(out)
 
+# -------------------------------------------
 '''
 SAMPLE OUTPUT
 
@@ -85,4 +93,9 @@ SAMPLE OUTPUT
 }
 
 '''
-# Don't kang without credits ;)
+'''
+ _._     _,-'""`-._
+(,-.`._,'(       |\`-/|
+    `-.-' \ )-`( , o o)
+          `-    \`_`"'-
+'''
